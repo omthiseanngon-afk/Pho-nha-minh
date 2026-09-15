@@ -1,1 +1,77 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Phố Nhà Mình</title><link rel="stylesheet" href="style.css"></head><body><main id="game"><header><div><h1>🌙 Phố Nhà Mình</h1><small>Cozy city & family life sim — Alpha</small></div><div class="stats"><b>⭐ Lv <span id="lv">1</span></b><b>🪙 <span id="money">5000</span></b><b>❤️ <span id="heart">0</span></b></div></header><section class="time"><span id="clock">☀️ Ngày 1 • 08:00</span><button id="advance">⏩ +2 giờ</button></section><section id="city" aria-label="Bản đồ thành phố"></section><p id="notice">📣 Chào mừng thị trưởng! Hãy bấm vào công trình hoặc cư dân.</p><nav><button data-tab="town">🏙️<span>Thị trấn</span></button><button data-tab="buildings">🏢<span>Tòa nhà</span></button><button data-tab="citizens">🧑‍🤝‍🧑<span>Công dân</span></button><button data-tab="family">👨‍👩‍👧<span>Gia đình</span></button></nav><section id="panel"></section></main><script src="game.js"></script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Phố Nhà Mình</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;background:#162239;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+#game{max-width:520px;margin:auto;min-height:100vh;background:linear-gradient(#1c2941,#172239);position:relative;overflow:hidden}
+.top{padding:calc(10px + env(safe-area-inset-top)) 14px 8px;position:relative;z-index:5;background:linear-gradient(#17243c 70%,transparent)}
+.row{display:flex;align-items:center;gap:8px}.level{width:58px;height:58px;border-radius:50%;background:#ffd64d;color:#6a4c00;border:4px solid #fff3a4;font-weight:900;font-size:21px;display:grid;place-items:center}
+.res{height:42px;background:#263958;border:2px solid #60779b;border-radius:22px;padding:0 12px;display:flex;align-items:center;gap:6px;font-weight:800;box-shadow:0 3px 0 #101a2c;white-space:nowrap}.res b{font-size:17px}.spacer{flex:1}
+.notice{margin:8px 14px 6px;background:rgba(244,246,249,.94);color:#4b5360;border-radius:18px;padding:9px 14px;font-weight:700;text-align:center;box-shadow:0 3px 9px #0005;position:relative;z-index:4}
+.mapwrap{height:650px;position:relative;overflow:hidden;background:#293d42;touch-action:pan-y}
+#world{position:absolute;width:760px;height:760px;left:50%;top:-15px;transform:translateX(-50%);transform-origin:50% 40%}
+.road{position:absolute;background:#3b4657;border:2px solid #515d70;box-shadow:inset 0 0 0 2px #303a48}.road.h{width:760px;height:112px;left:0;top:305px;transform:rotate(-7deg)}.road.v{width:118px;height:760px;left:330px;top:0;transform:rotate(11deg)}
+.roadline{position:absolute;border-top:3px dashed #9098a5;opacity:.5;width:760px;top:360px;left:0;transform:rotate(-7deg)}
+.grass{position:absolute;background:#315347;border:3px solid #41695b;border-radius:46%;box-shadow:inset 0 0 30px #1d3a32}
+.g1{width:250px;height:160px;left:22px;top:410px}.g2{width:235px;height:150px;right:18px;top:425px}
+.building{position:absolute;border:0;background:transparent;color:white;text-align:center;width:150px;height:155px;padding:0;z-index:2;filter:drop-shadow(0 8px 5px #0007)}
+.house{position:absolute;left:23px;top:130px}.cafe{right:30px;top:125px}.bakery{right:28px;top:445px}.salon{left:40px;top:455px}
+.bld{position:relative;width:126px;height:96px;margin:auto;border-radius:9px 9px 13px 13px;border:3px solid #172235;background:linear-gradient(135deg,#e9b98d,#a76457);box-shadow:inset -12px -8px #0002}
+.roof{position:absolute;left:-10px;top:-28px;width:142px;height:48px;background:#8f4051;clip-path:polygon(50% 0,100% 62%,92% 100%,8% 100%,0 62%);border-radius:9px}
+.window{position:absolute;width:31px;height:32px;background:#9ce7ff;border:4px solid #fff4d5;top:30px;box-shadow:inset 0 0 8px #2a8bb5}.w1{left:12px}.w2{right:12px}.door{position:absolute;width:27px;height:45px;background:#714838;left:50px;bottom:0;border:3px solid #4b3028;border-radius:5px 5px 0 0}
+.cafe .bld{background:#6e4778}.cafe .roof{background:#372c5e}.bakery .bld{background:#efb96f}.bakery .roof{background:#dc775b}.salon .bld{background:#77b2b5}.salon .roof{background:#426a8c}
+.sign{position:absolute;left:18px;right:18px;bottom:7px;background:#243652dd;border:2px solid #6881a5;border-radius:13px;padding:5px;font-weight:900;font-size:14px}.lvl{font-size:11px;color:#d9e6ff}
+.park{position:absolute;left:258px;top:447px;width:220px;height:145px;z-index:1}.tree{position:absolute;font-size:56px;filter:drop-shadow(0 5px 3px #0005)}.t1{left:10px;top:20px}.t2{right:8px;top:48px}.fountain{position:absolute;left:82px;top:48px;font-size:55px}
+.npc{position:absolute;z-index:5;width:58px;text-align:center;transition:left 1.3s ease,top 1.3s ease}.face{width:48px;height:48px;border-radius:50%;background:#f4f0e9;border:4px solid white;display:grid;place-items:center;font-size:29px;box-shadow:0 3px 6px #0008}.name{background:#172239dd;border-radius:9px;padding:2px 5px;font-size:11px;margin-top:2px}
+.bubble{position:absolute;z-index:8;background:white;color:#344052;border-radius:12px;padding:6px 9px;font-size:11px;max-width:125px;box-shadow:0 3px 8px #0006;animation:pop 3s forwards}@keyframes pop{0%{opacity:0;transform:scale(.7)}10%,80%{opacity:1;transform:scale(1)}100%{opacity:0}}
+.bottom{position:sticky;bottom:0;z-index:20;background:linear-gradient(transparent,#172239 18%);padding:16px 7px calc(7px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.nav{border:0;background:#334b72;color:#fff;border-radius:16px;padding:7px 2px;min-height:62px;font-size:9px;font-weight:800;box-shadow:inset 0 0 0 2px #5f79a5}.nav span{display:block;font-size:27px}.nav.speed{background:#5066b2}
+.panel{position:absolute;z-index:30;left:12px;right:12px;bottom:88px;background:#f7f3ed;color:#2e3a4c;border-radius:22px;padding:16px;box-shadow:0 12px 40px #0009;display:none;max-height:430px;overflow:auto}.panel.show{display:block}.panel h2{margin:0 0 8px}.close{float:right;border:0;border-radius:50%;width:36px;height:36px;font-size:20px}.card{background:white;border:1px solid #ddd4c8;border-radius:15px;padding:10px;margin:8px 0}.action{border:0;background:#385d92;color:white;border-radius:12px;padding:10px 12px;font-weight:800;margin:3px}.pink{background:#b64e79}.green{background:#397d63}
+@media(max-width:380px){.mapwrap{height:590px}.res{padding:0 8px;font-size:12px}.level{width:52px;height:52px}}
+</style></head>
+<body><main id="game">
+<section class="top"><div class="row"><div class="level" id="lv">1</div><div class="res">💵 <b id="cash">5.000</b></div><div class="res">💎 <b id="gem">5</b></div><div class="spacer"></div><div class="res">🌙 <b id="clock">08:00</b></div></div></section>
+<div class="notice" id="notice">📣 Tin mới: Khu phố vừa mở cửa! Hãy làm quen với cư dân.</div>
+<section class="mapwrap"><div id="world">
+<div class="grass g1"></div><div class="grass g2"></div><div class="road h"></div><div class="road v"></div><div class="roadline"></div>
+<button class="building house" data-b="Nhà Hoa"><div class="bld"><div class="roof"></div><div class="window w1"></div><div class="window w2"></div><div class="door"></div></div><div class="sign">🏠 Nhà Hoa<div class="lvl">Lv.1</div></div></button>
+<button class="building cafe" data-b="Mây Café"><div class="bld"><div class="roof"></div><div class="window w1"></div><div class="window w2"></div><div class="door"></div></div><div class="sign">☕ Mây Café<div class="lvl">Lv.1</div></div></button>
+<button class="building bakery" data-b="Tiệm bánh"><div class="bld"><div class="roof"></div><div class="window w1"></div><div class="window w2"></div><div class="door"></div></div><div class="sign">🧁 Tiệm bánh<div class="lvl">Lv.1</div></div></button>
+<button class="building salon" data-b="Salon"><div class="bld"><div class="roof"></div><div class="window w1"></div><div class="window w2"></div><div class="door"></div></div><div class="sign">✂️ Salon<div class="lvl">Lv.1</div></div></button>
+<div class="park"><span class="tree t1">🌳</span><span class="tree t2">🌸</span><span class="fountain">⛲</span></div>
+<div id="npcs"></div></div></section>
+<section class="bottom">
+<button class="nav" data-panel="shop"><span>🏪</span>Cửa hàng</button><button class="nav" data-panel="build"><span>🏢</span>Tòa nhà</button><button class="nav" data-panel="people"><span>👥</span>Công dân</button><button class="nav" data-panel="town"><span>⭐</span>Thị trưởng</button><button class="nav" data-panel="family"><span>💞</span>Gia đình</button><button class="nav speed" id="speed"><span>⏩</span>Tăng tốc</button>
+</section>
+<div class="panel" id="panel"><button class="close">×</button><div id="panelBody"></div></div>
+</main>
+<script>
+(()=>{const root=document.querySelector('#game'); if(root.dataset.init)return;root.dataset.init='1';
+let S={cash:5000,gem:5,lv:1,hour:8,day:1,speed:1,rels:{},married:[],kids:[],bld:{"Nhà Hoa":1,"Mây Café":1,"Tiệm bánh":1,"Salon":1}};
+const people=[["Bạn","🧑🏻",360,280],["Yuki","👩🏻",505,250],["Ren","👨🏻",210,360],["Mina","👱🏻‍♀️",535,470],["Kai","👨🏽",270,235],["Luna","👩🏻‍🦰",420,510]];
+const $=q=>root.querySelector(q), fmt=n=>n.toLocaleString('vi-VN');
+function hud(){$('#cash').textContent=fmt(S.cash);$('#gem').textContent=S.gem;$('#lv').textContent=S.lv;$('#clock').textContent=String(S.hour).padStart(2,'0')+':00'}
+function drawNPC(){let box=$('#npcs');box.innerHTML='';people.forEach((p,i)=>{let d=document.createElement('button');d.className='npc';d.style.left=p[2]+'px';d.style.top=p[3]+'px';d.dataset.i=i;d.innerHTML=`<div class="face">${p[1]}</div><div class="name">${p[0]}</div>`;d.addEventListener('click',()=>person(i));box.appendChild(d)})}
+function toast(t){$('#notice').textContent='📣 '+t}
+function bubble(i,t){let p=people[i],b=document.createElement('div');b.className='bubble';b.style.left=(p[2]+35)+'px';b.style.top=(p[3]-18)+'px';b.textContent=t;$('#world').appendChild(b);setTimeout(()=>b.remove(),3000)}
+function wander(){root.querySelectorAll('.npc').forEach((d,i)=>{if(i===0)return;let p=people[i];p[2]=120+Math.random()*500;p[3]=210+Math.random()*340;d.style.left=p[2]+'px';d.style.top=p[3]+'px'});if(Math.random()<.5){let i=1+Math.floor(Math.random()*5);bubble(i,["Đi uống cà phê hong?","Hôm nay vui ghê!","Tui đang đi làm nè~","Công viên đẹp quá 🌸","Gặp nhau nha!"][Math.floor(Math.random()*5)])}}
+function open(title,html){$('#panelBody').innerHTML=`<h2>${title}</h2>${html}`;$('#panel').classList.add('show')}
+function person(i){let p=people[i];if(i===0){open("🧑🏻 Bạn",`<div class=card>Thị trưởng của Phố Nhà Mình<br>💗 Có thể kết bạn, yêu, kết hôn và xây gia đình.</div>`);return}
+let r=S.rels[p[0]]||0, spouse=S.married.find(x=>x.includes(p[0]));
+open(p[1]+" "+p[0],`<div class=card>💗 Thân thiết: <b>${r}/100</b><br>${spouse?"💍 Đã kết hôn":"Độc thân"}</div><button class=action id=talk>💬 Trò chuyện</button><button class="action pink" id=date>💗 Hẹn hò</button>${r>=80&&!spouse?'<button class="action green" id=marry>💍 Kết hôn</button>':''}`);
+$('#talk').onclick=()=>{S.rels[p[0]]=Math.min(100,r+10);toast(`Bạn và ${p[0]} thân thiết hơn 💗`);person(i)};
+$('#date').onclick=()=>{if(r<30)return toast("Cần thân thiết 30 trước khi hẹn hò.");S.rels[p[0]]=Math.min(100,r+15);S.cash=Math.max(0,S.cash-100);toast(`Buổi hẹn với ${p[0]} rất vui ✨`);hud();person(i)};
+let m=$('#marry');if(m)m.onclick=()=>{S.married.push(["Bạn",p[0]]);toast(`💍 Bạn và ${p[0]} đã kết hôn!`);person(i)}
+}
+root.querySelectorAll('.building').forEach(b=>b.addEventListener('click',()=>{let n=b.dataset.b,l=S.bld[n],cost=l*900;open(n,`<div class=card>🏢 Cấp ${l}<br>💵 Thu nhập: ${l*120}/chu kỳ<br>⬆️ Nâng cấp: ${fmt(cost)}</div><button class=action id=collect>💵 Thu tiền</button><button class=action id=upgrade>⬆️ Nâng cấp</button>`);$('#collect').onclick=()=>{S.cash+=l*120;hud();toast(`Đã thu ${l*120} từ ${n}`)};$('#upgrade').onclick=()=>{if(S.cash<cost)return toast("Chưa đủ tiền.");S.cash-=cost;S.bld[n]++;hud();toast(`${n} lên cấp ${l+1}!`);b.querySelector('.lvl').textContent='Lv.'+(l+1)}}));
+function panels(k){if(k==='people')open("👥 Công dân",people.map((p,i)=>`<div class=card>${p[1]} <b>${p[0]}</b> ${i?'· 💗 '+(S.rels[p[0]]||0):'· Thị trưởng'}</div>`).join(''));else if(k==='family')open("💞 Gia đình",S.married.length?S.married.map(x=>`<div class=card>💍 ${x.join(" × ")}<br><button class="action pink baby">👶 Có em bé</button></div>`).join('')+(S.kids.map(k=>`<div class=card>👶 ${k}</div>`).join('')):`<div class=card>Chưa có gia đình. Hãy làm quen → hẹn hò → kết hôn với một cư dân.</div>`);else if(k==='shop')open("🏪 Cửa hàng",`<div class=card>🌸 Cây anh đào · 300 💵 <button class=action id=buy>Mua</button></div><div class=card>🪴 Ghế công viên · 450 💵</div>`);else if(k==='build')open("🏢 Tòa nhà",Object.entries(S.bld).map(x=>`<div class=card>${x[0]} · Lv.${x[1]}</div>`).join(''));else open("⭐ Thị trưởng",`<div class=card>Ngày ${S.day} · Cấp ${S.lv}<br>Mục tiêu: kết bạn, phát triển khu phố và xây một gia đình nhiều thế hệ.</div>`);
+root.querySelectorAll('.baby').forEach(x=>x.onclick=()=>{if(S.cash<500)return toast("Cần 500 tiền.");S.cash-=500;let names=["Mochi","Mây","Bông","Nori","An"];let n=names[Math.floor(Math.random()*names.length)];S.kids.push(n);hud();toast(`👶 Chào mừng bé ${n}! Bé sẽ thừa hưởng nét của hai phụ huynh.`);panels('family')});
+let buy=$('#buy');if(buy)buy.onclick=()=>{if(S.cash<300)return toast("Chưa đủ tiền.");S.cash-=300;hud();toast("Đã trang trí cây anh đào 🌸")}}
+root.querySelectorAll('.nav[data-panel]').forEach(n=>n.addEventListener('click',()=>panels(n.dataset.panel)));$('.close').onclick=()=>$('#panel').classList.remove('show');
+$('#speed').onclick=()=>{S.speed=S.speed===1?2:S.speed===2?4:1;$('#speed').innerHTML=`<span>⏩</span>x${S.speed}`;toast(`Tốc độ x${S.speed}`)};
+setInterval(()=>{S.hour+=S.speed;if(S.hour>=24){S.hour%=24;S.day++}hud()},3500);setInterval(wander,4200);drawNPC();hud();
+})();
+</script></body></html>
